@@ -1,4 +1,29 @@
 const Motivathon = {
+// === Data abstraction (DB-ready) ===
+window.Data = (function(){
+  const LS_KEYS = {
+    tasks: "motivathon_tasks",
+    history: "motivathon_history"
+  };
+  function get(key, def="[]"){
+    try { return JSON.parse(localStorage.getItem(key) || def); } catch(e){ return JSON.parse(def); }
+  }
+  function set(key, val){
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){}
+  }
+  return {
+    listTasks(){ return get(LS_KEYS.tasks); },
+    saveTasks(list){ set(LS_KEYS.tasks, list); },
+    listHistory(){ return get(LS_KEYS.history); },
+    saveHistory(list){ set(LS_KEYS.history, list); },
+    setTaskDone(id, done){
+      const list = get(LS_KEYS.tasks);
+      const i = list.findIndex(t => t && t.id === id);
+      if (i >= 0){ list[i].done = !!done; set(LS_KEYS.tasks, list); }
+    }
+  };
+})();
+// === End Data abstraction ===
   tasks: [],
   history: [],
   groupBy: "category",
@@ -822,8 +847,8 @@ const metaRow = document.createElement("div");
   // Persistence
   saveToStorage() {
     try {
-      localStorage.setItem("motivathon_tasks", JSON.stringify(this.tasks));
-      localStorage.setItem("motivathon_history", JSON.stringify(this.history));
+      Data.saveTasks(this.tasks);
+      Data.saveHistory(this.history);
       localStorage.setItem("motivathon_xp", String(this.player.xp));
       localStorage.setItem("motivathon_groupby", this.groupBy);
       localStorage.setItem("motivathon_sortby", this.sortBy);
@@ -833,14 +858,14 @@ const metaRow = document.createElement("div");
   },
   loadFromStorage() {
     try {
-      const storedTasks = localStorage.getItem("motivathon_tasks");
+      const storedTasks = JSON.stringify(Data.listTasks());
       if (storedTasks) {
         this.tasks = JSON.parse(storedTasks) || [];
         let changed = false;
         for (const t of this.tasks) { if (!t.id) { t.id = this.genId(); changed = true; } t.xp = Number(t.xp) || 0; }
         if (changed) this.saveToStorage();
       }
-      const storedHistory = localStorage.getItem("motivathon_history");
+      const storedHistory = JSON.stringify(Data.listHistory());
       if (storedHistory) this.history = JSON.parse(storedHistory) || [];
       const storedXP = localStorage.getItem("motivathon_xp");
       if (storedXP != null) {

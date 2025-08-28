@@ -1,0 +1,669 @@
+/* ====== Base ====== */
+:root{
+  --bg:#ffffff; --text:#111; --muted:#666;
+  --border:#e5e5e5; --panel:#fafafa;
+  --primary:#4caf50; --danger:#e53935; --accent:#3f51b5;
+  --cat-alim:#2e7d32; --cat-sport:#1565c0; --cat-gh:#6a1b9a; --cat-hl:#00897b; --cat-div:#5f6368;
+  --per-daily:#43a047; --per-week:#1e88e5; --per-month:#8e24aa; --per-3d:#fb8c00; --per-2w:#fdd835; --per-success:#fbc02d;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);background:var(--bg);margin:0;padding:0}
+
+/* ====== Header ====== */
+.app-header{padding:12px 16px;border-bottom:1px solid var(--border);background:#fff;position:sticky;top:0;z-index:10}
+.app-header h1{margin:0;font-size:1.1rem;font-weight:700}
+
+/* ====== Layout (confort desktop) ====== */
+.container{
+  display:grid;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); /* 2/3 : 1/3 */
+  grid-template-areas: "main profile";
+  gap:16px;
+  padding:16px;
+  align-items:start;
+}
+#main{min-width:0; grid-area: main;}
+#profilePanel{min-width:280px;position:sticky;top:72px; grid-area: profile;}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.profile-card{padding:14px}
+.profile-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.profile-header h2{font-size:1.05rem;margin:0}
+
+/* Placeholder image de grade */
+.grade-illustration{display:flex;justify-content:center;margin-bottom:12px}
+.grade-placeholder{
+  width:140px;height:140px;border-radius:50%;
+  border:2px dashed var(--border);
+  background:#f8f8f8;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);font-size:.9rem;text-align:center;
+  user-select:none;
+}
+
+/* Profile badges */
+.profile-badges{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 6px}
+.badge-soft{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:.86rem;border:1px solid var(--border);background:#fafafa}
+.badge-grade{background:linear-gradient(135deg,#fff3e0,#ffe0b2);border-color:#ffd59b}
+.badge-level{background:#eef7ff;border-color:#cfe4ff}
+.badge-xptotal{background:#f7ffee;border-color:#d9f2b8;font-weight:700}
+
+/* Barre d'XP */
+#xpContainer{width:100%;background:#ddd;height:26px;margin:10px 0 8px;border-radius:8px;overflow:hidden}
+#xpBar{position:relative;height:100%;width:100%;text-align:center;line-height:26px;color:#fff}
+.xp-fill{position:absolute;left:0;top:0;height:100%;width:0%;background:var(--primary);transition:width .35s}
+#xpLabel{position:relative;z-index:1;font-weight:700}
+.profile-line{margin:6px 0;color:#222}
+
+/* ====== Onglets & panneaux ====== */
+.tabs{display:flex;gap:10px;border-bottom:1px solid var(--border);margin:0 0 12px}
+.tab{background:#f6f6f6;border:1px solid var(--border);border-bottom:none;padding:8px 12px;border-top-left-radius:8px;border-top-right-radius:8px;cursor:pointer}
+.tab.active{background:#fff;font-weight:700}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ====== Barre d’outils tâches ====== */
+#controlsBar{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:8px 0 10px}
+#groupControls,#sortControls,#foldControls{display:flex;align-items:center;gap:6px}
+#totalCounter{margin-left:auto;font-weight:700;background:#f5f5f5;border:1px solid var(--border);padding:4px 8px;border-radius:6px}
+.toolbar{display:flex;gap:10px;margin:8px 0}
+
+/* ====== Tâches redesign ====== */
+.task{margin:8px 0;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center; position:relative}
+.check-wrap{display:inline-flex;align-items:center;justify-content:center}
+.task-check{position:absolute;opacity:0;width:0;height:0}
+.custom-checkbox{
+  width:22px;height:22px;border:2px solid var(--border);border-radius:6px;display:inline-block;position:relative;background:#fff;transition:all .2s ease;
+}
+.custom-checkbox::after{
+  content:""; position:absolute; inset:0; display:block; transform:scale(0);
+  background:var(--primary); border-radius:4px; transition:transform .16s ease;
+}
+.check-wrap input:checked + .custom-checkbox{border-color:var(--primary)}
+.check-wrap input:checked + .custom-checkbox::after{transform:scale(1)}
+.task.validating{opacity:.6}
+
+.title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.task-title{font-weight:700}
+.meta-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+
+.badge{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;font-size:.84rem;border:1px solid transparent;background:#f6f6f6}
+.badge-cat{color:#fff}
+.badge-xp{background:#fff3cd;border-color:#ffeeba;color:#8a6d3b;font-weight:700}
+
+/* Catégories (fond plein) */
+.badge-cat-alimentation{background:var(--cat-alim);border-color:transparent}
+.badge-cat-sport{background:var(--cat-sport)}
+.badge-cat-good-habits{background:var(--cat-gh)}
+.badge-cat-healthy-life{background:var(--cat-hl)}
+.badge-cat-divers{background:var(--cat-div)}
+
+/* Périodes (fond clair) */
+.badge-per-quotidienne{background:rgba(67,160,71,.12);border-color:rgba(67,160,71,.35);color:var(--per-daily)}
+.badge-per-hebdomadaire{background:rgba(30,136,229,.12);border-color:rgba(30,136,229,.35);color:var(--per-week)}
+.badge-per-mensuelle{background:rgba(142,36,170,.12);border-color:rgba(142,36,170,.35);color:var(--per-month)}
+.badge-per-3-jours{background:rgba(251,140,0,.12);border-color:rgba(251,140,0,.35);color:var(--per-3d)}
+.badge-per-2-semaines{background:rgba(253,216,53,.18);border-color:rgba(253,216,53,.45);color:#7a6a00}
+.badge-per-succes{background:rgba(251,192,45,.18);border-color:rgba(251,192,45,.45);color:#8a6d00}
+
+/* Actions réduites */
+.actions{display:flex;gap:4px;align-items:center;opacity:.75}
+.icon-btn{background:#fff;border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:.85rem;cursor:pointer}
+.icon-btn:hover{opacity:1}
+.icon-btn.danger{border-color:#ffd7d7;background:#fff5f5}
+
+/* ====== Groupes ====== */
+.group{margin-top:14px;border:1px solid var(--border);border-radius:10px;background:#fff}
+.group h3{margin:0;padding:10px 12px;font-size:1rem;color:#333;display:flex;align-items:center;gap:8px;cursor:pointer;background:var(--panel);border-bottom:1px solid var(--border);border-top-left-radius:10px;border-top-right-radius:10px}
+.group h3 .caret{display:inline-block;width:1em;text-align:center;font-weight:700}
+.group h3 .count-badge{background:#eef7ff;border:1px solid #cfe4ff;padding:2px 6px;border-radius:6px;font-size:.85rem;margin-left:auto}
+.group h3 .xp-badge{background:#f7ffee;border:1px solid #d9f2b8;padding:2px 6px;border-radius:6px;font-size:.85rem}
+.group-items{padding:8px 10px}
+.group.collapsed .group-items{display:none}
+
+/* ====== Historique ====== */
+#historyList{margin-top:12px}
+.history-item{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed #ddd;padding:8px 0;font-size:.95rem}
+.history-left{display:flex;gap:8px;flex-wrap:wrap}
+.history-right{white-space:nowrap;color:var(--muted)}
+.history-badge{background:#f2f2f2;padding:2px 6px;border-radius:6px;font-size:.85rem}
+
+/* ====== Admin / boutons ====== */
+.admin-actions{display:flex;gap:10px;margin:10px 0 6px;flex-wrap:wrap}
+.secondary{background:#e8f1ff;border:1px solid #c3dafc;padding:8px 12px;border-radius:8px;cursor:pointer}
+.danger{background:#ffeaea;border:1px solid #ffbdbd;padding:8px 12px;border-radius:8px;cursor:pointer}
+.ghost{background:#fff;border:1px solid var(--border);padding:6px 10px;border-radius:8px;cursor:pointer}
+.hint{color:var(--muted);font-size:.92rem;margin-top:4px}
+.importer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border)}
+.import-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+
+/* ====== Modal ====== */
+.modal{display:none;position:fixed;inset:0;background-color:rgba(0,0,0,.45)}
+.modal-content{background:#fff;margin:8vh auto;padding:20px;width:min(92vw,360px);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal .close{float:right;font-size:22px;cursor:pointer}
+
+/* ====== Task animations & XP pulse ====== */
+.task.just-validated{animation:pop .28s ease-in-out; border-color:#b6e7c4; background:#f3fff6}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.015)}100%{transform:scale(1)}}
+.task.vanish{opacity:0; transform:translateY(-3px); transition:opacity .22s ease, transform .22s ease}
+.xp-float{position:absolute; right:14px; top:-4px; background:#fff3cd; border:1px solid #ffe08a; color:#7a5a00; padding:2px 8px; border-radius:999px; font-size:.8rem; pointer-events:none; opacity:0; transform:translateY(0);}
+.xp-float.show{animation:riseFade .7s ease forwards}
+@keyframes riseFade{0%{opacity:0; transform:translateY(6px)}20%{opacity:1}80%{opacity:1}100%{opacity:0; transform:translateY(-12px)}}
+#xpContainer.xp-pulse{box-shadow:0 0 0 6px rgba(76,175,80,.12) inset, 0 0 0 0 rgba(76,175,80,.0); transition:box-shadow .4s ease}
+
+/* ====== Responsive ====== */
+@media (max-width: 1200px){
+  .container{grid-template-columns: minmax(0, 1.8fr) minmax(300px, 1fr)}
+}
+@media (max-width: 900px){
+  .container{
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "profile"
+      "main";
+  }
+  #profilePanel{position:static}
+  .profile-card{margin-bottom:8px}
+  .tabs{position:sticky;top:56px;background:#fff;padding-top:6px;z-index:9}
+  .grade-placeholder{width:120px;height:120px}
+}
+@media (max-width: 600px){
+  .task{grid-template-columns:auto 1fr auto; gap:10px}
+  .task .actions .icon-btn{padding:4px 6px}
+  .group h3{padding:10px}
+  #controlsBar{gap:10px}
+  .grade-placeholder{width:100px;height:100px}
+}
+
+
+/* --- Micro animations & badges --- */
+.task.reappear { animation: taskPop .35s ease-out both; }
+@keyframes taskPop { 0%{opacity:0; transform:translateY(-6px) scale(.98)} 60%{opacity:1; transform:translateY(0) scale(1.01)} 100%{opacity:1; transform:translateY(0) scale(1)} }
+
+.confetti-piece{ position:fixed; width:6px; height:6px; background: hsl(var(--h,0) 90% 55%); 
+  left:0; top:0; border-radius:1px; pointer-events:none; opacity:.9;
+  transform: translate3d(0,0,0) rotate(0);
+  animation: confettiFly .9s ease-out forwards;
+}
+.confetti-piece:nth-child(3n){ background:#ffd54f } .confetti-piece:nth-child(3n+1){ background:#4fc3f7 } .confetti-piece:nth-child(3n+2){ background:#81c784 }
+@keyframes confettiFly { 
+  0%{ transform: translate(0,0) rotate(0); opacity:1 }
+  100%{ transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity:0 }
+}
+
+#xpContainer.xp-pulse-strong { box-shadow: 0 0 0 12px rgba(76,175,80,.12) inset, 0 0 0 0 rgba(76,175,80,0); transition: box-shadow .7s ease; }
+
+.count-badge{ margin-left:8px; font-size:.82rem; color:#666; background:#f3f3f3; border:1px solid #e0e0e0; padding:2px 6px; border-radius:999px; align-self:center }
+
+.grade-toast{ position:fixed; left:50%; top:18%; transform:translateX(-50%) scale(.96); opacity:0; z-index:9999;
+  background:#fff; border:1px solid #eee; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.12);
+  padding:14px 16px; min-width:260px; transition: transform .25s ease, opacity .25s ease;
+}
+.grade-toast.show{ transform:translateX(-50%) scale(1); opacity:1 }
+.grade-toast .grade-title{ font-weight:700; margin-bottom:6px }
+.grade-toast .grade-body{ font-size:1rem }
+.grade-toast .grade-close{ position:absolute; right:8px; top:6px; border:none; background:transparent; font-size:18px; cursor:pointer }
+
+/* Longer vanish */
+.task.vanish{ animation: taskVanish .6s ease forwards }
+@keyframes taskVanish{ to{ opacity:0; transform: translateY(-6px) } }
+
+
+#xpContainer.xp-celebrate { animation: xpPulseBig 1.2s ease-out 0s 2; }
+@keyframes xpPulseBig {
+  0%   { box-shadow: 0 0 0 0 rgba(76,175,80,.00) inset; transform: scale(1); }
+  35%  { box-shadow: 0 0 0 14px rgba(76,175,80,.16) inset; transform: scale(1.02); }
+  70%  { box-shadow: 0 0 0 6px rgba(76,175,80,.08) inset; transform: scale(1.005); }
+  100% { box-shadow: 0 0 0 0 rgba(76,175,80,.00) inset; transform: scale(1); }
+}
+.grade-toast .grade-actions { margin-top:10px; display:flex; justify-content:flex-end; gap:8px }
+.grade-toast .btn { border:1px solid #ddd; background:#f6f6f6; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:600 }
+.grade-toast .btn:hover { background:#eee }
+.grade-toast .btn-ok { background:#4caf50; border-color:#4caf50; color:#fff }
+.grade-toast .btn-ok:hover { filter: brightness(1.05); }
+
+
+/* --- Trophées --- */
+.trophy-cabinet{
+  margin-top:12px; padding:10px;
+  border:1px dashed #e0e0e0; border-radius:10px; background:#fafafa;
+}
+.trophy-title{ font-weight:600; margin-bottom:6px; display:flex; gap:6px; align-items:center; }
+.trophy-grid{ display:flex; flex-wrap:wrap; gap:6px; }
+
+.trophy{
+  width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+  border-radius:6px; background:#fff; border:1px solid #eee;
+  box-shadow:0 1px 2px rgba(0,0,0,.04); font-size:18px; cursor:default; position:relative;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.trophy:hover{ transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.08); }
+
+.trophy[data-tooltip]:hover::after{
+  content: attr(data-tooltip);
+  position:absolute; left:50%; transform:translate(-50%,-110%);
+  background:#111; color:#fff; padding:6px 8px; border-radius:6px; white-space:nowrap;
+  font-size:12px; pointer-events:none; opacity:.95; z-index:10;
+}
+
+
+/* --- Trophées (Armoire) --- */
+.trophy-cabinet{
+  margin-top:12px; padding:10px;
+  border:1px dashed var(--border); border-radius:10px; background:#fafafa;
+}
+.trophy-title{ font-weight:600; margin-bottom:6px; display:flex; gap:6px; align-items:center; }
+.trophy-grid{ display:flex; flex-wrap:wrap; gap:6px; }
+.trophy-item{
+  width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+  border-radius:6px; background:#fff; border:1px solid #eee;
+  box-shadow:0 1px 2px rgba(0,0,0,.04); font-size:18px; cursor:default; position:relative;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.trophy-item:hover{ transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.08); }
+.trophy-item[data-tooltip]:hover::after{
+  content: attr(data-tooltip);
+  position:absolute; left:50%; transform:translate(-50%,-110%);
+  background:#111; color:#fff; padding:6px 8px; border-radius:6px; white-space:nowrap;
+  font-size:12px; pointer-events:none; opacity:.95; z-index:10;
+}
+/* Safety: hide any legacy trophies in XP bar */
+#xpContainer .trophy { display:none !important; }
+
+
+/* Safety: if cabinet accidentally lands inside XP container, hide until JS moves it out */
+#xpContainer #trophyCabinet { display:none !important; }
+/* Safety: hide any trophy icons inside XP area */
+#xpContainer .trophy, #xpContainer .trophy-item { display:none !important; }
+
+
+/* ===== Design Refresh v1 ===== */
+:root{
+  --bg:#f9fafb;
+  --panel:#ffffff;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --primary:#6d5efc;
+  --primary-700:#5a49fb;
+  --primary-50:#eef2ff;
+  --green:#22c55e;
+  --red:#ef4444;
+  --amber:#f59e0b;
+  --border:#e5e7eb;
+  --shadow:0 8px 20px rgba(20,20,50,.06);
+}
+html,body{background:var(--bg); color:var(--text);}
+.panel{background:var(--panel); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow);}
+.btn{ -webkit-appearance:none; appearance:none; border:1px solid transparent;
+  border-radius:999px; padding:10px 14px; font-weight:600; letter-spacing:.2px;
+  cursor:pointer; transition:transform .08s ease, box-shadow .12s ease, background .15s ease;
+  box-shadow:0 2px 8px rgba(109,94,252,.12);
+  display:inline-flex; align-items:center; gap:8px; }
+.btn:active{ transform:translateY(1px) }
+.btn:disabled{ opacity:.55; cursor:not-allowed; }
+.btn-primary{ background:var(--primary); color:#fff; }
+.btn-primary:hover{ background:var(--primary-700); }
+.btn-secondary{ background:var(--primary-50); color:var(--primary); box-shadow:none; }
+.btn-secondary:hover{ background:#e8ecff; }
+.btn-danger{ background:#fee2e2; color:#991b1b; box-shadow:none; border-color:#fecaca; }
+.btn-danger:hover{ background:#fecaca; }
+.btn-icon{ padding:8px 10px; width:36px; height:36px; justify-content:center; }
+.btn-icon .emoji{font-size:16px}
+.tab-btn{ padding:8px 12px; border-radius:999px; border:1px solid var(--border);
+  background:#fff; color:var(--muted); font-weight:600; }
+.tab-btn.active{ background:var(--primary); color:#fff; border-color:transparent; }
+.tabs{ display:flex; gap:8px; flex-wrap:wrap }
+.chips{ display:flex; gap:6px; flex-wrap:wrap; align-items:center }
+.chip{
+  display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
+  background:#fff; border:1px solid var(--border); font-weight:600; font-size:12px; color:var(--muted); }
+.chip.cat{ background:#f0f9ff; border-color:#bae6fd; color:#075985; }
+.chip.per{ background:#fefce8; border-color:#fde68a; color:#854d0e; }
+.chip.xp{  background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
+.task-row{ display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center;
+  padding:10px; border:1px solid var(--border); border-radius:12px; background:#fff;
+  transition:transform .08s ease, box-shadow .12s ease, border .12s ease; }
+.task-row:hover{ box-shadow:0 6px 18px rgba(0,0,0,.05); transform:translateY(-1px); }
+.task-title{ font-weight:700; }
+.task-meta{ display:flex; justify-content:space-between; align-items:center; gap:10px }
+.task-actions{ display:flex; gap:8px; }
+.task-check{
+  width:20px; height:20px; border-radius:6px; border:2px solid var(--primary);
+  display:inline-grid; place-items:center; cursor:pointer; transition:all .12s ease;
+  background:#fff; }
+.task-check input{ display:none; }
+.task-check::after{ content:""; width:12px; height:12px; border-radius:3px; background:transparent; transition:background .12s ease; }
+.task-check.checked{ background:var(--primary); }
+.task-check.checked::after{ background:#fff; }
+.trophy-cabinet{ margin-top:12px; padding:10px; border:1px dashed var(--border); border-radius:10px; background:#fafafa; }
+.trophy-title{ font-weight:600; margin-bottom:6px; display:flex; gap:6px; align-items:center; }
+.trophy-grid{ display:flex; flex-wrap:wrap; gap:6px; }
+.trophy-item{ width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; background:#fff; border:1px solid #eee; box-shadow:0 1px 2px rgba(0,0,0,.04); font-size:18px; cursor:default; position:relative; transition:transform .12s ease, box-shadow .12s ease; }
+.trophy-item:hover{ transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,.08); }
+.trophy-item[data-tooltip]:hover::after{ content: attr(data-tooltip); position:absolute; left:50%; transform:translate(-50%,-110%); background:#111; color:#fff; padding:6px 8px; border-radius:6px; white-space:nowrap; font-size:12px; pointer-events:none; opacity:.95; z-index:10; }
+#xpContainer .trophy, #xpContainer .trophy-item, #xpContainer #trophyCabinet{ display:none !important; }
+
+
+/* === Discreet controls & compact + button (r2) === */
+#controlsBar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+#groupControls, #sortControls, #foldControls{ font-size:12px; color:#6b7280; display:flex; align-items:center; gap:6px; }
+#groupControls label, #sortControls label{ font-weight:600; }
+#groupControls select, #sortControls select{
+  padding:6px 10px; font-size:13px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; color:#374151;
+  outline:none; transition:box-shadow .12s ease, border .12s ease;
+}
+#groupControls select:focus, #sortControls select:focus{ border-color:#c7d2fe; box-shadow:0 0 0 3px rgba(99,102,241,.15); }
+#foldControls button{ background:transparent; border:none; color:#6b7280; padding:6px 8px; border-radius:8px; font-weight:600; }
+#foldControls button:hover{ background:#f3f4f6; color:#374151; }
+#totalCounter{ margin-left:auto; font-size:12px; color:#6b7280; }
+
+.toolbar{ display:flex; justify-content:flex-end; margin:10px 0; }
+.btn-plus{
+  width:38px; height:38px; border-radius:999px; background:#fff; color:#374151; border:1px solid #e5e7eb;
+  display:inline-grid; place-items:center; font-size:20px; line-height:1; cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.06); transition:transform .08s ease, box-shadow .12s ease, background .15s ease;
+}
+.btn-plus:hover{ transform:translateY(-1px); box-shadow:0 8px 16px rgba(0,0,0,.08); background:#f9fafb; }
+.btn-plus:active{ transform:translateY(0); box-shadow:0 2px 6px rgba(0,0,0,.06); }
+
+
+/* === Group Headers – safe color variants (CSS-only base) === */
+.group{ margin-bottom:12px; }
+.group h3{
+  display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;
+  padding:10px 12px; background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+  transition:transform .08s ease, box-shadow .12s ease, background .15s ease, border-color .12s ease;
+}
+.group h3:hover{ transform:translateY(-1px); box-shadow:0 8px 16px rgba(0,0,0,.06); }
+.group .caret{ width:16px; text-align:center; }
+.group .count-badge, .group .xp-badge{
+  background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; border-radius:999px; padding:3px 8px; font-weight:700; font-size:12px;
+}
+
+.group.collapsed .group-items{ display:none; }
+.group.collapsed h3{ opacity:.95; }
+
+/* === Group Headers — palette harmonisée (override minimal, couleurs seulement) === */
+/* Catégories */
+.group.cat-alimentation h3 { background:#edf7f1; border-color:#b7ebcd; }   /* vert doux */
+.group.cat-sport h3        { background:#eef5ff; border-color:#c6dcff; }   /* bleu doux */
+.group.cat-good-habits h3  { background:#f6edff; border-color:#e3d1ff; }   /* violet doux */
+.group.cat-healthy-life h3 { background:#eafaf7; border-color:#c6f0e7; }   /* teal doux */
+.group.cat-divers h3       { background:#f5f7fb; border-color:#e5e7eb; }   /* neutre */
+
+/* Périodicité */
+.group.per-quotidienne h3  { background:#eefbf1; border-color:#c9f3d5; }   /* vert */
+.group.per-hebdomadaire h3 { background:#eef5ff; border-color:#c6dcff; }   /* bleu */
+.group.per-mensuelle h3    { background:#f6edff; border-color:#e3d1ff; }   /* violet */
+.group.per-3-jours h3      { background:#fff6ed; border-color:#ffddb6; }   /* orange */
+.group.per-2-semaines h3   { background:#fffce8; border-color:#fde68a; }   /* ambre */
+.group.per-succes h3       { background:#fff8e1; border-color:#fde68a; }   /* doré */
+
+/* === Group Headers — icônes (CSS-only, ultra-minimal) === */
+.group h3::before{
+  content:""; display:inline-block; width:18px; text-align:center;
+  margin-right:6px; opacity:.95; /* discret */
+  /* pas de changement de taille police, pas d'animations */
+}
+
+/* Catégories */
+.group.cat-alimentation h3::before { content:"🥦"; }
+.group.cat-sport h3::before        { content:"🏃"; }
+.group.cat-good-habits h3::before  { content:"⏰"; }
+.group.cat-healthy-life h3::before { content:"🧘‍♂️"; }
+.group.cat-divers h3::before       { content:"🎯"; }
+
+/* Périodicités */
+.group.per-quotidienne h3::before  { content:"📅"; }
+.group.per-hebdomadaire h3::before { content:"🗓️"; }
+.group.per-mensuelle h3::before    { content:"📆"; }
+.group.per-3-jours h3::before      { content:"➂"; }
+.group.per-2-semaines h3::before   { content:"②"; }
+.group.per-succes h3::before       { content:"🏆"; }
+
+/* === Profil — badges (scoped, CSS-only, no regressions) === */
+#profilePanel .profile-badges{
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+  margin:10px 0 6px;
+}
+
+#profilePanel .profile-badges .badge-soft{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid #e5e7eb;
+  background:#f9fafb;
+  font-weight:800; font-size:.9rem; line-height:1;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+}
+
+/* Variantes (couleurs lisibles) */
+#profilePanel .profile-badges .badge-level{
+  background:#eef2ff; border-color:#c7d2fe; color:#3730a3;
+}
+#profilePanel .profile-badges .badge-grade{
+  background:#fff7ed; border-color:#fed7aa; color:#9a3412;
+}
+#profilePanel .profile-badges .badge-xptotal{
+  background:#ecfdf5; border-color:#a7f3d0; color:#065f46;
+}
+
+/* Maintenir la compacité sur mobile */
+@media (max-width: 540px){
+  #profilePanel .profile-badges .badge-soft{
+    padding:4px 8px; font-size:.85rem;
+  }
+}
+/* === Profil — boîte + titres (scopé, sans régression) === */
+
+/* Boîte profil : carte douce */
+#profilePanel{
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,.04);
+}
+
+/* Titres à l’intérieur du profil (et éventuelle armoire) */
+#profilePanel h2,
+#profilePanel .section-title,
+#trophyCabinet .section-title{
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: 6px 0 8px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+/* Soulignement discret (pas d’icône pour éviter les doublons) */
+#profilePanel h2::after,
+#profilePanel .section-title::after,
+#trophyCabinet .section-title::after{
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(199,210,254,.9), transparent);
+  border-radius: 1px;
+  margin-left: .25rem;
+}
+/* === Profil — boîte + titres (ciblé, CSS-only) === */
+
+/* Boîte profil : léger relief + bandeau d’accent discret */
+#profilePanel{
+  position: relative;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,.06);
+}
+#profilePanel::before{
+  content:"";
+  position:absolute; inset:0 0 auto 0; height:4px;
+  background: linear-gradient(90deg, #a78bfa, #60a5fa 60%, transparent);
+  border-top-left-radius:14px; border-top-right-radius:14px;
+  pointer-events:none;
+}
+
+/* Titres à l’intérieur du profil (et armoire si présente) */
+#profilePanel h2,
+#profilePanel .section-title{
+  display:flex; align-items:center; gap:.55rem;
+  margin:10px 0 8px;
+  font-size:1.18rem; font-weight:900; letter-spacing:.2px;
+  color:#111827;
+  position:relative;
+}
+#profilePanel h2::before{           /* icône pour le titre “Profil” */
+  content:"👤";
+  font-size:1.05rem; line-height:1;
+}
+#profilePanel h2::after,
+#profilePanel .section-title::after{
+  content:"";
+  flex:1; height:2px; margin-left:.35rem;
+  background: linear-gradient(90deg, rgba(167,139,250,.9), transparent);
+  border-radius:1px;
+}
+
+/* Titre de l’armoire (si présent dans ta base) */
+#trophyCabinet .section-title{
+  display:flex; align-items:center; gap:.55rem;
+  margin:10px 0 8px;
+  font-size:1.06rem; font-weight:900; letter-spacing:.18px;
+  color:#111827;
+  position:relative;
+}
+#trophyCabinet .section-title::before{ /* icône pour “Armoire aux trophées” */
+  content:"🏆";
+  font-size:1rem; line-height:1;
+}
+#trophyCabinet .section-title::after{
+  content:"";
+  flex:1; height:2px; margin-left:.35rem;
+  background: linear-gradient(90deg, rgba(96,165,250,.9), transparent);
+  border-radius:1px;
+}
+/* === Armoire aux trophées — titres harmonisés (robuste) === */
+#trophyCabinet h2,
+#trophyCabinet h3,
+#trophyCabinet .section-title,
+.trophy-section-title,
+.trophy-title{
+  display:flex; align-items:center; gap:.55rem;
+  margin:10px 0 8px;
+  font-size:1.06rem; font-weight:900; letter-spacing:.18px;
+  color:#111827;
+}
+
+#trophyCabinet h2::before,
+#trophyCabinet h3::before,
+#trophyCabinet .section-title::before,
+.trophy-section-title::before,
+.trophy-title::before{
+  content:"🏆";
+  font-size:1rem; line-height:1;
+}
+
+#trophyCabinet h2::after,
+#trophyCabinet h3::after,
+#trophyCabinet .section-title::after,
+.trophy-section-title::after,
+.trophy-title::after{
+  content:"";
+  flex:1; height:2px; margin-left:.35rem;
+  background: linear-gradient(90deg, rgba(96,165,250,.9), transparent);
+  border-radius:1px;
+}
+/* === Fix: éviter l’icône en double sur l’armoire === */
+#trophyCabinet h2::before,
+#trophyCabinet h3::before,
+#trophyCabinet .section-title::before,
+.trophy-section-title::before,
+.trophy-title::before {
+  content: none !important; /* on laisse l'icône existante dans le HTML/CSS d'origine */
+}
+
+/* On conserve le style et le soulignement renforcé */
+#trophyCabinet h2,
+#trophyCabinet h3,
+#trophyCabinet .section-title,
+.trophy-section-title,
+.trophy-title{
+  display:flex; align-items:center; gap:.55rem;
+  margin:10px 0 8px;
+  font-size:1.06rem; font-weight:900; letter-spacing:.18px;
+  color:#111827;
+}
+#trophyCabinet h2::after,
+#trophyCabinet h3::after,
+#trophyCabinet .section-title::after,
+.trophy-section-title::after,
+.trophy-title::after{
+  content:"";
+  flex:1; height:2px; margin-left:.35rem;
+  background: linear-gradient(90deg, rgba(96,165,250,.9), transparent);
+  border-radius:1px;
+}
+
+
+
+/* === History modal usability patch (wider, scrollable) === */
+#historyModal .modal-content{
+  width: min(960px, 92vw);
+  max-height: 82vh;
+  overflow: auto;
+}
+
+/* === Grade avatar rectangle + grade modal === */
+#gradeImage{
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: 12px !important;
+  background-color: #f3f4f6;
+}
+#gradeImage.has-img{
+  background-size: cover;
+  background-position: center;
+  color: transparent;
+  border: none;
+}
+.grade-modal .modal-content{ max-width: min(640px, 92vw); animation: popIn .18s ease-out; }
+.grade-modal .title{ margin: 0 0 8px; font-weight: 700; font-size: 1.25rem; }
+.grade-modal img{ width:100%; height:auto; border-radius:12px; display:block; }
+@keyframes popIn{ from{ transform:scale(.96); opacity:0 } to{ transform:scale(1); opacity:1 } }
+
+.grade-toast{ display:none !important; pointer-events:none !important; }
+
+/* === App banner (logo + title + baseline) === */
+#appBanner{
+  display:flex; align-items:center; gap:14px;
+  padding:12px 16px; margin:10px 10px 14px;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border:1px solid #e5e7eb; border-radius:16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.06);
+}
+#appBanner .app-logo{
+  width:72px; height:72px; border-radius:12px; object-fit:cover;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+#appBanner .app-title{ 
+  font-size: clamp(22px, 3vw, 28px); 
+  letter-spacing: .5px; line-height:1.05; margin:0;
+  font-weight: 800;
+  background: linear-gradient(90deg, #0ea5e9, #1d4ed8);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; text-shadow: 0 1px 0 rgba(255,255,255,.6);
+}
+#appBanner .app-baseline{
+  margin-top: 2px; font-size: 14px; letter-spacing: .3px;
+  color:#334155; opacity:.9; font-weight:600;
+}
+#appBanner .app-titlebox{ display:flex; flex-direction:column; }
+@media (max-width: 520px){
+  #appBanner{ gap:10px; padding:10px 12px; margin:8px; }
+  #appBanner .app-logo{ width:56px; height:56px; }
+  #appBanner .app-baseline{ font-size:13px; }
+}
+

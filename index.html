@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0077cc">
+  <meta charset="UTF-8" />
+  <title>Motivathon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header id="appBanner" role="banner" aria-label="Motivathon">
+    <img src="app.png" alt="" class="app-logo" />
+    <div class="app-titlebox">
+      <h1 class="app-title" aria-label="Motivathon">Motivathon</h1>
+      <div class="app-baseline">From zero to hero&nbsp;!</div>
+    </div>
+  </header>
+  <div class="container">
+    <!-- Contenu principal : TÂCHES / HISTORIQUE / ADMIN -->
+    <main id="main">
+      <!-- Onglets -->
+      
+
+      <!-- Panneau TÂCHES -->
+      <section id="tab-tasks" class="tab-panel active"><div class="toolbar">
+          <button id="openModal" class="btn-plus" title="Ajouter une tâche" aria-label="Ajouter une tâche">+</button>
+        
+          <button id="btnHistory" class="btn-plus" title="Historique" aria-label="Historique">🕘</button>
+          <button id="btnAdmin" class="btn-plus" title="Admin" aria-label="Admin">⚙️</button>
+</div>
+<div id="controlsBar">
+          <div id="groupControls">Regrouper par :
+            <select id="groupBy">
+              <option value="category" selected>Catégorie</option>
+              <option value="period">Périodicité</option>
+              <option value="none">Aucun</option>
+            </select>
+          </div>
+
+        
+          <div id="sortControls">Trier par :
+            <select id="sortBy">
+              <option value="none" selected>Aucun</option>
+              <option value="xpAsc">XP croissant</option>
+              <option value="xpDesc">XP décroissant</option>
+            </select>
+          </div>
+          <div id="foldControls">
+            <button id="collapseAll" class="ghost" title="Plier tous les groupes">Tout plier</button>
+            <button id="expandAll" class="ghost" title="Déplier tous les groupes">Tout déplier</button>
+          </div>
+          <div id="totalCounter" title="Nombre total de tâches">Total : 0</div>
+        </div>
+
+        <!-- Modal d'ajout/édition -->
+        <div id="taskModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+          <div class="modal-content">
+            <span class="close" id="closeModal" aria-label="Fermer">&times;</span>
+            <h2 id="modalTitle">Ajouter une tâche</h2>
+            <form id="taskForm">
+              <input type="text" id="taskTitle" placeholder="Titre" required />
+              <select id="taskCategory" required>
+                <option value="">Catégorie</option>
+                <option value="Alimentation">🥦 Alimentation</option>
+                <option value="Sport">🏃 Sport</option>
+                <option value="Good Habits">⏰ Good Habits</option>
+                <option value="Healthy life">🧘‍♂️ Healthy life</option>
+                <option value="Divers">🎯 Divers</option>
+              </select>
+              <select id="taskPeriod" required>
+                <option value="">Périodicité</option>
+                <option value="quotidienne">Quotidienne</option>
+                <option value="hebdomadaire">Hebdomadaire</option>
+                <option value="mensuelle">Mensuelle</option>
+                <option value="3 jours">Tous les 3 jours</option>
+                <option value="2 semaines">Toutes les 2 semaines</option>
+                <option value="succès">Succès</option>
+              </select>
+              <input type="number" id="taskXP" placeholder="XP" required />
+              <button type="submit" id="submitBtn">Ajouter</button>
+            </form>
+          </div>
+        </div>
+
+        
+
+        <div id="taskList"></div>
+      </section>
+
+      <!-- Panneau HISTORIQUE -->
+      <section id="tab-history" class="tab-panel"></section>
+
+      <!-- Panneau ADMIN -->
+      <section id="tab-admin" class="tab-panel"></section>
+    </main>
+
+    <!-- Panneau PROFIL (à droite) -->
+    <aside id="profilePanel" aria-label="Profil">
+      <div class="card profile-card">
+        <div class="profile-header">
+          <h2>Profil</h2>
+        </div>
+
+        <!-- Placeholder image de grade -->
+        <div class="grade-illustration">
+          <div id="gradeImage" class="grade-placeholder" role="img" aria-label="Image du grade (placeholder)">Image du grade</div>
+        </div>
+
+        <!-- Badges profil -->
+        <div id="profileBadges" class="profile-badges"></div>
+
+        <!-- Barre d'XP -->
+        <div id="xpContainer" aria-label="Barre d’expérience">
+          <div id="xpBar"><div id="xpFill" class="xp-fill"></div>
+<!-- Armoire aux trophées -->
+
+
+<div id="trophyGrid" class="trophy-grid"></div>
+        </div>
+        <span id="xpLabel">XP : 0 / 100</span></div>
+<div id="trophyCabinet" class="trophy-cabinet">
+  <div class="trophy-title">🗄️ Armoire aux trophées</div>
+  
+</div>
+
+        </div>
+</div>
+    </aside>
+  </div>
+
+  <script src="app.js"></script>
+
+<!-- Modal HISTORIQUE -->
+<div id="historyModal" class="modal" hidden="true" role="dialog" aria-modal="true">
+  <div class="modal-content">
+    <span class="close" id="closeHistoryModal" aria-label="Fermer">&times;</span>
+    
+        <h2>Historique des tâches validées</h2>
+        <div id="historyList"></div>
+      
+  </div>
+</div>
+
+<!-- Modal ADMIN -->
+<div id="adminModal" class="modal" hidden="true" role="dialog" aria-modal="true">
+  <div class="modal-content">
+    <span class="close" id="closeAdminModal" aria-label="Fermer">&times;</span>
+    
+        <h2>Administration</h2>
+        <div class="admin-actions">
+          <button id="resetXP" class="secondary">Réinitialiser l'XP</button>
+          <button id="clearHistory" class="danger">Vider l'historique</button>
+          <button id="clearTasks" class="danger">Supprimer toutes les tâches</button>
+        </div>
+
+        <div class="importer">
+          <h3>Importer des tâches (CSV)</h3>
+          <div class="import-row">
+            <input type="file" id="importCsv" accept=".csv" />
+            <button id="importCsvBtn">Importer CSV</button>
+          </div>
+        <div class="importer">
+          <h3>Backup & Restore</h3>
+          <div class="import-row">
+            <button id="backupExport" class="secondary" title="Exporter toutes les données en JSON">Exporter backup (.json)</button>
+            <button id="backupImport" class="secondary" title="Restaurer depuis un fichier JSON">Importer backup (.json)</button>
+            <input type="file" id="backupFile" accept="application/json" style="display:none" />
+          </div>
+          <p class="hint">Sauvegarde/restore de toutes les données locales : tâches, historique, XP, préférences, pliages, trophées…</p>
+          <div id="backupSummary" class="hint"></div>
+        </div>
+
+          <p class="hint">
+            Colonnes attendues : <code>Titre</code>, <code>Catégorie</code>,
+            <code>Périodicité</code>, <code>XP</code> (séparateur ; ou , ou \t, prise en charge de <code>sep=;</code>).
+          </p>
+          <div id="importSummary" class="hint"></div>
+          <details id="importErrors" class="hint" style="display:none;">
+            <summary>Afficher les erreurs</summary>
+            <ul id="importErrorsList"></ul>
+          </details>
+        </div>
+      
+  </div>
+</div>
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-content">
+    <p>&copy; 2025 Motivathon — All rights reserved.</p>
+    <p>Powered by <strong>Clem</strong></p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: #fff;
+    color: #333;
+    padding: 15px 20px;
+    text-align: center;
+    font-size: 0.9rem;
+    margin-top: 40px;
+    border-top: 1px solid #ddd; /* fine ligne de séparation */
+  }
+
+  .footer-content {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .footer a {
+    color: #0077cc;
+    text-decoration: none;
+  }
+
+  .footer a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+</body>
+</html>

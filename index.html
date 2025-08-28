@@ -219,5 +219,21 @@
   }
 </style>
 
+  <!-- Supabase SDK (laisse même si MODE="local", c'est neutre) -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<!-- Variables d'environnement (remplace les valeurs quand tu passeras en MODE="supabase") -->
+<script>
+  window.__ENV__ = {
+    SUPABASE_URL: "",        // ex: "https://xxxx.supabase.co"
+    SUPABASE_ANON_KEY: ""    // ex: "eyJhbGciOiJIUzI1NiIs..."
+  };
+</script>
+
+<!-- Modules -->
+<script type="module" src="./dataService.js"></script>
+<script type="module" src="./app.js"></script>
+
+
 </body>
 </html>

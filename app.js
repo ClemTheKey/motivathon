@@ -285,12 +285,20 @@ if (this.form) this.form.addEventListener("submit", (e) => this.handleFormSubmit
       this.renderProfileBadges();
 
       // Réapparition (sauf succès)
-      const per = ((task.period || task.periodicity || "")).normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();
-      if (per === "succes") { try { if (this.addTrophy) this.addTrophy(task); } catch(e) {}
-        this.renderTasks(); this.renderHistory(); return;
+      const perRaw = (task.period || task.periodicity || "").toString();
+      const perNorm = perRaw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      const isSuccess = perNorm === "succes" || (this.normalizePeriod && this.normalizePeriod(perRaw) === 'succès');
+      if (isSuccess) {
+        try { if (typeof this.addTrophy === 'function') this.addTrophy(task); } catch(e) {}
+        // Sauvegarder et re-rendre sans réapparition
+        this.saveToStorage();
+        try { if (typeof this.renderTrophies === 'function') this.renderTrophies(); } catch(e) {}
+        this.renderTasks();
+        this.renderHistory();
+        return;
       }
       setTimeout(() => {
-        if (rid !== this.runId) return;
+if (rid !== this.runId) return;
         if ((this.normalizePeriod && this.normalizePeriod(task.period || task.periodicity)) !== 'succès') {
             task.__reappear = true;
             this.tasks.push(task);

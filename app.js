@@ -1505,3 +1505,32 @@ async function migrateFromLocalStorage() {
     console.error("Migration LS->Cloud échouée", e);
   }
 }
+
+(async function boot() {
+  const user = await getUser();
+  if (!user) {
+    const email = prompt("Entrez votre email pour synchroniser (magic link) :");
+    if (email) await signInWithEmail(email);
+    return; // l’utilisateur revient via le lien de l’email
+  }
+
+  await migrateFromLocalStorage();
+
+  // Charger et afficher
+  const tasks = await fetchTasks();
+  renderTasks(tasks); // -> ta fonction actuelle d’affichage
+
+  // Realtime : réactualiser l’UI si quelqu’un modifie ailleurs (web/iPhone)
+  subscribeRealtime(async () => {
+    const fresh = await fetchTasks();
+    renderTasks(fresh);
+  });
+})();
+
+await setTaskDone(taskId, true); // ou false
+
+const saved = await upsertTask({
+  id: existingId || undefined,
+  title, category, period, xp, done: false
+});
+

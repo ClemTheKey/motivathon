@@ -1428,3 +1428,80 @@ if ("serviceWorker" in navigator) {
       .catch((err) => console.error("❌ Service Worker erreur :", err));
   });
 }
+// ---------------- AUTH ----------------
+async function signInWithEmail(email) {
+  const { error } = await sb.auth.signInWithOtp({ email });
+  if (error) alert("Erreur login: " + error.message);
+  else alert("Lien envoyé ! Ouvre ton email sur cet appareil.");
+}
+
+async function getUser() {
+  const { data: { user } } = await sb.auth.getUser();
+  return user || null;
+}
+
+// ---------------- DATA API ----------------
+async function fetchTasks() {
+  const user = await getUser();
+  if (!user) return [];
+  const { data, error } = await sb
+    .from("tasks")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) { console.error(error); return []; }
+  return data;
+}
+
+async function upsertTask(task) {
+  const user = await getUser(); if (!user) return;
+  const payload = { ...task, user_id: user.id };
+  const { data, error } = await sb.from("tasks").upsert(payload).select().single();
+  if (error) console.error(error);
+  return data;
+}
+
+async function setTaskDone(id, done) {
+  const user = await getUser(); if (!user) return;
+  await sb.from("tasks").update({ done, updated_at: new Date().toISOString() })
+    .eq("id", id).eq("user_id", user.id);
+  await sb.from("history").insert({ user_id: user.id, task_id: id, action: done ? "completed" : "reopened" });
+}
+
+// ---------------- REALTIME (live sync) ----------------
+function subscribeRealtime(onChange) {
+  // s'abonner à toutes les mutations de la table tasks
+  const channel = sb.channel("tasks-realtime")
+    .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, (payload) => {
+      onChange && onChange(payload);
+    })
+    .subscribe();
+  return channel;
+}
+
+// ---------------- MIGRATION localStorage -> cloud (one-shot après login) ----------------
+async function migrateFromLocalStorage() {
+  const user = await getUser(); if (!user) return;
+
+  try {
+    const raw = localStorage.getItem("motivathon_tasks");
+    if (!raw) return;
+    const localTasks = JSON.parse(raw);
+    if (!Array.isArray(localTasks) || localTasks.length === 0) return;
+
+    // insère en masse (ajuste le mapping)
+    const rows = localTasks.map(t => ({
+      user_id: user.id,
+      id: t.id || undefined,
+      title: t.title,
+      category: t.category,
+      period: t.period,
+      xp: t.xp || 0,
+      done: !!t.done
+    }));
+    await sb.from("tasks").insert(rows, { upsert: true });
+    // Optionnel: vider le localStorage après migration
+    // localStorage.removeItem("motivathon_tasks");
+  } catch(e) {
+    console.error("Migration LS->Cloud échouée", e);
+  }
+}

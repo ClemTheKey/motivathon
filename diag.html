@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motivathon – Diagnostic Pages/Scripts</title>
+<style>
+:root{--fg:#111;--muted:#666;--ok:#0a0;--bad:#b00}
+body{font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#fafafa;color:var(--fg);padding:24px}
+.card{background:#fff;border:1px solid #e6e6e6;border-radius:14px;padding:18px;max-width:920px;margin:0 auto;box-shadow:0 6px 22px rgba(0,0,0,.06)}
+.h{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.small{font-size:12px;color:var(--muted)}
+.row{display:grid;grid-template-columns:220px 1fr;gap:12px;align-items:center;margin:10px 0}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #ccc}
+.badge.ok{color:var(--ok);border-color:var(--ok)}
+.badge.no{color:var(--bad);border-color:var(--bad)}
+pre{background:#f7f7f7;border:1px solid #eee;padding:10px;border-radius:8px;overflow:auto;max-height:260px;white-space:pre-wrap}
+code{background:#f3f3f3;padding:2px 4px;border-radius:6px}
+.btn{display:inline-block;border:1px solid #ddd;border-radius:10px;padding:6px 10px;background:#fff;cursor:pointer}
+.btn:hover{background:#f5f5f5}
+.kv{display:flex;gap:8px;flex-wrap:wrap}
+.kv span{padding:2px 6px;border:1px solid #eee;border-radius:6px;background:#fcfcfc}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="h">
+    <h2>Motivathon — Diagnostic GitHub Pages / Scripts</h2>
+    <div class="small" id="stamp"></div>
+  </div>
+
+  <div class="row"><div>URL actuelle</div><div id="loc"></div></div>
+  <div class="row"><div>Branche (marqueur BUILD dans index.html)</div><div id="branch" class="badge">inconnue</div></div>
+  <div class="row"><div>Supabase SDK</div><div id="sdk" class="badge">…</div></div>
+  <div class="row"><div>window.__ENV__</div><div id="env" class="badge">…</div></div>
+  <div class="row"><div>Clés de window.Data</div><div><pre id="dataKeys">(chargement…)</pre></div></div>
+  <div class="row"><div>dataService.js → contient "getUser"</div><div id="hasGetUser" class="badge">…</div></div>
+  <div class="row"><div>dataService.js (début du fichier)</div><div><pre id="dsPreview"></pre></div></div>
+  <div class="row"><div>Extract index.html (haut de page)</div><div><pre id="indexHead"></pre></div></div>
+
+  <div class="row"><div>Actions rapides</div>
+    <div class="kv">
+      <button class="btn" id="btnReload">Hard reload (no-store)</button>
+      <button class="btn" id="btnUnreg">Unregister Service Worker</button>
+      <button class="btn" id="btnShowCache">Afficher caches.keys()</button>
+    </div>
+  </div>
+
+  <div class="row"><div>Caches</div><div><pre id="cachesList"></pre></div></div>
+</div>
+
+<!-- Charge le même dataService.js que le site (chemin relatif) -->
+<script src="dataService.js"></script>
+
+<script>
+(async function(){
+  const $ = (id)=>document.getElementById(id);
+  const now = new Date().toISOString();
+  $('stamp').textContent = "Diag généré: " + now;
+  $('loc').textContent = location.href;
+
+  // Supabase SDK présent ?
+  const hasSDK = (typeof window.supabase !== 'undefined');
+  $('sdk').textContent = hasSDK ? 'loaded' : 'missing';
+  $('sdk').className = 'badge ' + (hasSDK ? 'ok' : 'no');
+
+  // ENV présent ?
+  const hasEnv = !!window.__ENV__ && !!window.__ENV__.SUPABASE_URL;
+  $('env').textContent = hasEnv ? 'present' : 'missing/empty';
+  $('env').className = 'badge ' + (hasEnv ? 'ok' : 'no');
+
+  // Data keys
+  const keys = window.Data ? Object.keys(window.Data) : [];
+  $('dataKeys').textContent = (keys.length ? keys.join('\\n') : '(Data manquant)');
+  
+  // index.html extrait (haut de page)
+  try {
+    const html = await (await fetch('index.html', {cache:'no-store'})).text();
+    const head = html.slice(0, 800);
+    $('indexHead').textContent = head + (html.length>800 ? '\\n…' : '');
+    const m = html.match(/BUILD:\s*([-\w/.@ ]+)/i);
+    $('branch').textContent = m ? m[1] : 'inconnue';
+    $('branch').className = 'badge ' + (m ? 'ok' : 'no');
+  } catch(e) {
+    $('indexHead').textContent = String(e);
+    $('branch').textContent = 'introuvable';
+    $('branch').className = 'badge no';
+  }
+
+  // dataService.js: contenu + présence de getUser
+  try {
+    const txt = await (await fetch('dataService.js', {cache:'no-store'})).text();
+    $('hasGetUser').textContent = txt.includes('getUser') ? 'oui' : 'non';
+    $('hasGetUser').className = 'badge ' + (txt.includes('getUser') ? 'ok' : 'no');
+    $('dsPreview').textContent = txt.slice(0, 800) + (txt.length>800 ? '\\n…' : '');
+  } catch(e) {
+    $('hasGetUser').textContent = 'introuvable';
+    $('hasGetUser').className = 'badge no';
+    $('dsPreview').textContent = String(e);
+  }
+
+  // Boutons utilitaires
+  $('btnReload').onclick = ()=> location.reload(true);
+  $('btnUnreg').onclick = async()=>{
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+      alert('Service worker désenregistré. Recharge la page.');
+    } else {
+      alert('Pas de support Service Worker ici.');
+    }
+  };
+  $('btnShowCache').onclick = async()=>{
+    try{
+      const names = await caches.keys();
+      $('cachesList').textContent = names.join('\\n') || '(aucun cache)';
+    }catch(e){
+      $('cachesList').textContent = String(e);
+    }
+  };
+})();
+</script>
+</body>
+</html>

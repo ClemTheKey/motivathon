@@ -131,21 +131,7 @@
     </aside>
   </div>
 
-<!-- Supabase SDK -->
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-<!-- Variables d'environnement Supabase -->
-<script>
-  window.__ENV__ = {
-    SUPABASE_URL: "https://ffgmghmpopoqhquwlngc.supabase.co",
-    SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmZ21naG1wb3BvcWhxdXdsbmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzOTc5NDcsImV4cCI6MjA3MTk3Mzk0N30.g--ND0xLLVLo-e8rgWFDV5SBWX4YTdcAJLUf70NjVyY"
-  };
-</script>
-  
-
-<script src="dataService.js?v=3"></script>
-<script src="db_init.js?v=3"></script>  <!-- ou commente cette ligne si tu testes l’option 2 -->
-<script src="app.js?v=3"></script>
 
 
 
@@ -235,6 +221,19 @@
     text-decoration: underline;
   }
 </style>
+<!-- Supabase SDK -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
+<!-- Variables d'environnement Supabase -->
+<script>
+  window.__ENV__ = {
+    SUPABASE_URL: "https://ffgmghmpopoqhquwlngc.supabase.co",
+    SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmZ21naG1wb3BvcWhxdXdsbmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzOTc5NDcsImV4cCI6MjA3MTk3Mzk0N30.g--ND0xLLVLo-e8rgWFDV5SBWX4YTdcAJLUf70NjVyY"
+  };
+</script>
+  
+<script src="dataService.js?v=fix1"></script>
+<script src="db_init.js?v=fix1"></script>
+<script src="app.js?v=fix1"></script>
 </body>
 </html>

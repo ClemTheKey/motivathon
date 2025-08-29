@@ -1,84 +1,45 @@
-// dataService.js — Pont unique entre l’app et la donnée (localStorage <-> Supabase)
-export const Data = (function () {
-  // Basculer ici: "local" pour revenir 100% localStorage, "supabase" pour synchro cloud
-  const MODE = "local"; // change en "supabase" quand Supabase sera prêt
+/* dataService.js — DB-ready data layer for Motivathon
+ * Default: localStorage (sync) to avoid breaking current app.js.
+ * Later: switch to Supabase by turning on the async impl (instructions inside).
+ */
+(function(global){
+  const LS_KEYS = { tasks: "motivathon_tasks", history: "motivathon_history" };
 
-  // === Interface commune utilisée par l'app ===
-  async function init() { return MODE === "supabase" ? initSB() : null; }
-  async function listTasks() { return MODE === "supabase" ? sbListTasks() : lsListTasks(); }
-  async function upsertTask(t) { return MODE === "supabase" ? sbUpsertTask(t) : lsUpsertTask(t); }
-  async function setDone(id, done) { return MODE === "supabase" ? sbSetDone(id, done) : lsSetDone(id, done); }
-  function onRealtime(cb) { return MODE === "supabase" ? sbSubscribe(cb) : () => {}; }
-
-  // === Implémentation LocalStorage (ton mode actuel) ===
-  const LS_KEYS = { tasks: "motivathon_tasks" }; // ajuste si tu as d’autres clés
-  const lsGet = () => { try { return JSON.parse(localStorage.getItem(LS_KEYS.tasks) || "[]"); } catch { return []; } };
-  const lsSet = (list) => localStorage.setItem(LS_KEYS.tasks, JSON.stringify(list));
-
-  async function lsListTasks() { return lsGet(); }
-  async function lsUpsertTask(t) {
-    const list = lsGet();
-    if (!t.id) t.id = crypto.randomUUID();
-    const i = list.findIndex(x => x.id === t.id);
-    if (i >= 0) list[i] = { ...list[i], ...t }; else list.push(t);
-    lsSet(list);
-    return t;
+  function safeParse(s, def) {
+    try { return JSON.parse(s ?? def); } catch(e){ return JSON.parse(def); }
   }
-  async function lsSetDone(id, done) {
-    const list = lsGet();
-    const i = list.findIndex(x => x.id === id);
-    if (i >= 0) { list[i].done = !!done; lsSet(list); }
-  }
+  function getLS(key, def="[]"){ return safeParse(localStorage.getItem(key), def); }
+  function setLS(key, val){ try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){} }
 
-  // === Implémentation Supabase (activée quand MODE="supabase") ===
-  let sb = null;
+  // ---- SYNC API (compatible with existing app.js) ----
+  const Data = {
+    // Init is a no-op in local mode
+    init: function(){ /* no-op for local */ },
 
-  async function initSB() {
-    const env = window.__ENV__ || {};
-    const { SUPABASE_URL, SUPABASE_ANON_KEY } = env;
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase) {
-      console.warn("[Data] Supabase non configuré, fallback local.");
-      return null;
-    }
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true }
-    });
-    return null;
-  }
+    // Returns arrays synchronously (important for current app.js design)
+    listTasks: function(){ return getLS(LS_KEYS.tasks); },
+    listHistory: function(){ return getLS(LS_KEYS.history); },
 
-  async function sbUser() {
-    const { data: { user } } = await sb.auth.getUser();
-    return user || null;
-  }
+    saveTasks: function(list){ setLS(LS_KEYS.tasks, list); },
+    saveHistory: function(list){ setLS(LS_KEYS.history, list); },
 
-  async function sbListTasks() {
-    const user = await sbUser(); if (!user) return lsListTasks(); // fallback
-    const { data, error } = await sb.from("tasks").select("*").order("created_at", { ascending: true });
-    if (error) { console.error(error); return lsListTasks(); }
-    return data;
-  }
+    setTaskDone: function(id, done){
+      const list = getLS(LS_KEYS.tasks);
+      const i = list.findIndex(t => t && t.id === id);
+      if (i >= 0){ list[i].done = !!done; setLS(LS_KEYS.tasks, list); }
+    },
 
-  async function sbUpsertTask(t) {
-    const user = await sbUser(); if (!user) return lsUpsertTask(t);
-    const payload = { ...t, user_id: user.id };
-    if (!payload.id) delete payload.id; // laisser Postgres générer
-    const { data, error } = await sb.from("tasks").upsert(payload).select().single();
-    if (error) { console.error(error); return lsUpsertTask(t); }
-    return data;
-  }
+    // Placeholder: realtime callback (no-op in local mode)
+    onRealtime: function(/*cb*/){ /* no-op */ }
+  };
 
-  async function sbSetDone(id, done) {
-    const user = await sbUser(); if (!user) return lsSetDone(id, done);
-    await sb.from("tasks").update({ done, updated_at: new Date().toISOString() })
-      .eq("id", id).eq("user_id", user.id);
-  }
+  // Expose
+  global.Data = Data;
 
-  function sbSubscribe(cb) {
-    // écoute toutes les mutations sur tasks
-    return sb.channel("tasks-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, () => cb && cb())
-      .subscribe();
-  }
-
-  return { init, listTasks, upsertTask, setDone, onRealtime };
-})();
+  /* -----------------------------------------
+   * To enable Supabase later (async flows):
+   * - Convert callers in app.js to await Data.listTasks(), Data.upsertTask(), Data.setDone()
+   * - Replace local methods with async versions using Supabase client
+   * - Keep localStorage as fallback if user not logged in
+   * ----------------------------------------- */
+})(window);

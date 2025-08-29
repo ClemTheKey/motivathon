@@ -1,8 +1,8 @@
-// db_init.js — bootstrap tolérant (ne plante pas si certaines méthodes manquent)
+// db_init.js — bootstrap 100% tolérant
 (async () => {
   try {
     if (!window.Data) {
-      console.warn("[db_init] window.Data manquant");
+      console.info("[db_init] Data non présent (ok).");
       return;
     }
 
@@ -15,13 +15,14 @@
     }
 
     if (typeof Data.onRealtime === "function") {
+      // On s'abonne seulement si la méthode existe
       Data.onRealtime(async () => {
         if (typeof Data.refresh === "function") {
           await Data.refresh();
         }
       });
     } else {
-      console.info("[db_init] onRealtime non disponible — ignoré");
+      console.info("[db_init] onRealtime absent (normal si local).");
     }
   } catch (e) {
     console.warn("[db_init] bootstrap failed:", e);

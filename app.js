@@ -1,21 +1,4 @@
-// === Data abstraction (DB-ready) ===
-window.Data = (function(){
-  const LS_KEYS = { tasks: "motivathon_tasks", history: "motivathon_history" };
-  function get(key, def="[]"){ try { return JSON.parse(localStorage.getItem(key) || def); } catch(e){ return JSON.parse(def); } }
-  function set(key, val){ try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){} }
-  return {
-    listTasks(){ return get(LS_KEYS.tasks); },
-    saveTasks(list){ set(LS_KEYS.tasks, list); },
-    listHistory(){ return get(LS_KEYS.history); },
-    saveHistory(list){ set(LS_KEYS.history, list); },
-    setTaskDone(id, done){
-      const list = get(LS_KEYS.tasks);
-      const i = list.findIndex(t => t && t.id === id);
-      if (i >= 0){ list[i].done = !!done; set(LS_KEYS.tasks, list); }
-    }
-  };
-})();
-// === End Data abstraction ===
+
 
 const Motivathon = {
   tasks: [],

@@ -36,17 +36,39 @@
   async function _getUser(){ if(!state.sb) return null; const { data:{ user } } = await state.sb.auth.getUser(); return user||null; }
 
   const Data = {
-    async init(){
-      const env = global.__ENV__ || {};
-      const { SUPABASE_URL, SUPABASE_ANON_KEY } = env;
-      if (!global.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
-        console.info("[Data] Supabase pas configuré → local only");
-        return;
-      }
-      state.sb = global.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth:{ persistSession:true, autoRefreshToken:true }
-      });
-    },
+  async init(){
+  // Empêche les doubles inits
+  if (state.initialized) return;
+  state.initialized = true;
+
+  const env = global.__ENV__ || {};
+  const { SUPABASE_URL, SUPABASE_ANON_KEY } = env;
+
+  // Si pas de config, on reste en local
+  if (!global.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.info("[Data] Supabase pas configuré → local only");
+    return;
+  }
+
+  // Réutilise un client global s’il existe déjà
+  if (global.__SB_CLIENT) {
+    state.sb = global.__SB_CLIENT;
+    return;
+  }
+
+  // IMPORTANT : storageKey unique à ton app/domaine (évite les collisions)
+  state.sb = global.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey: "sb-motivathon-auth" // ← clé dédiée (change-la si tu as d’autres apps sur le même domaine)
+    }
+  });
+
+  // Expose le singleton pour les autres modules éventuels
+  global.__SB_CLIENT = state.sb;
+},
+
 
     // sync (cache)
     listTasks(){ return state.cacheTasks; },

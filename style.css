@@ -138,9 +138,30 @@ body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:
 .import-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
 
 /* ====== Modal ====== */
-.modal{display:none;position:fixed;inset:0;background-color:rgba(0,0,0,.45)}
-.modal-content{background:#fff;margin:8vh auto;padding:20px;width:min(92vw,360px);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-.modal .close{float:right;font-size:22px;cursor:pointer}
+.modal{
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000; /* above header/cards */
+}
+/* Force flex-centering if JS sets display:block instead of flex */
+.modal[style*="display: block"], .modal.is-open{ display:flex !important; }
+
+.modal-content{
+  position: relative;
+  background: #fff;
+  padding: 20px;
+  width: min(92vw, 420px);
+  max-height: 88vh;
+  overflow: auto;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.28);
+  z-index: 10001;
+}
+.modal .close{ position:absolute; right:10px; top:8px; font-size:22px; cursor:pointer }
 
 /* ====== Task animations & XP pulse ====== */
 .task.just-validated{animation:pop .28s ease-in-out; border-color:#b6e7c4; background:#f3fff6}

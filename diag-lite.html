@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<title>Motivathon — Diag Lite</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<pre id="out">[init]</pre>
+<script>
+(function(){
+  const out = document.getElementById('out');
+  function log(...a){ out.textContent += "\n" + a.map(x=>typeof x==="string"?x:JSON.stringify(x)).join(" "); }
+
+  log("JS OK at", new Date().toISOString());
+  log("Location:", location.href);
+
+  // 1) Lister <script src> présents dans cette page (diag-lite)
+  const srcs = Array.from(document.querySelectorAll("script[src]")).map(s=>s.src);
+  log("This page scripts:", srcs);
+
+  // 2) Essayer de lire index.html brut
+  fetch('index.html', {cache:'no-store'})
+    .then(r => r.text())
+    .then(t => {
+      log("Fetched index.html length:", t.length);
+      const top = t.slice(0, 500).replace(/\n/g,'\\n');
+      log("Head excerpt:", top);
+      const scripts = (t.match(/<script[^>]+src=/gi)||[]).length;
+      log("index.html <script src> count:", scripts);
+    })
+    .catch(e => log("ERROR fetching index.html:", String(e)));
+
+  // 3) Vérifier présence de dataService.js en ligne
+  fetch('dataService.js', {cache:'no-store'})
+    .then(r => { log("dataService.js status:", r.status); return r.text(); })
+    .then(txt => {
+      log("dataService.js has getUser?:", txt.includes("getUser"));
+      log("dataService.js first 120 chars:", txt.slice(0,120).replace(/\n/g,'\\n'));
+    })
+    .catch(e => log("ERROR fetching dataService.js:", String(e)));
+
+  // 4) Service Worker / caches
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs=>{
+      log("SW registrations:", regs.length);
+    });
+  } else {
+    log("No Service Worker support");
+  }
+  if ('caches' in window) {
+    caches.keys().then(keys=>log("Cache keys:", keys));
+  }
+})();
+</script>

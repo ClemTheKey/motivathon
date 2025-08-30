@@ -150,7 +150,7 @@ async signInWithEmail(email, redirectTo){
     options: { emailRedirectTo: target } // <= v2 de supabase-js
   });
   return { error };
-}
+},
 
     async signOut(){ if (!state.sb) return; await state.sb.auth.signOut(); }
   };

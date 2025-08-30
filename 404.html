@@ -1,0 +1,16 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Redirecting…</title>
+<script>
+  (function(){
+    // Conserve query (?…) et hash (#access_token=…)
+    var target = "/motivathon/index.html" + location.search + location.hash;
+    // Si ton repo est exactement /motivathon/, on garde le préfixe
+    if (!location.pathname.startsWith("/motivathon/")) {
+      // Sécurité (au cas où déployé ailleurs)
+      target = (location.pathname.replace(/[^/]+$/, "index.html")) + location.search + location.hash;
+    }
+    location.replace(target);
+  })();
+</script>
+<p>Redirecting…</p>

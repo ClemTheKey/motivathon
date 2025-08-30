@@ -139,7 +139,19 @@
 
     // Auth helpers
     async getUser(){ return await _getUser(); },
-    async signInWithEmail(email){ if (!state.sb) return { error: "Supabase not configured" }; const { error } = await state.sb.auth.signInWithOtp({ email }); return { error }; },
+    // Remplace Data.signInWithEmail par ceci
+async signInWithEmail(email, redirectTo){
+  if (!state.sb) return { error: "Supabase not configured" };
+  // Par défaut, on force la page index de ton projet Pages
+  const fallback = "https://clemthekey.github.io/motivathon/index.html";
+  const target = redirectTo || fallback;
+  const { error } = await state.sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: target } // <= v2 de supabase-js
+  });
+  return { error };
+}
+
     async signOut(){ if (!state.sb) return; await state.sb.auth.signOut(); }
   };
 

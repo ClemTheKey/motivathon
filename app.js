@@ -1438,3 +1438,79 @@ if ("serviceWorker" in navigator) {
       .catch((err) => console.error("❌ Service Worker erreur :", err));
   });
 }
+// === Auth UI wiring ===
+(function authUI(){
+  const $ = (id) => document.getElementById(id);
+  const authBar   = $('authBar');
+  if (!authBar || !window.Data) return; // si la page ne contient pas l'UI
+
+  const emailEl  = $('authEmail');
+  const msgEl    = $('authMsg');
+  const modal    = $('authModal');
+  const openBtn  = $('btnLogin');
+  const closeBtn = $('authClose');
+  const sendBtn  = $('authSend');
+  const logoutBtn= $('btnLogout');
+  const userSpan = $('authUser');
+
+  function openModal(){ modal.style.display = 'flex'; emailEl.focus(); msgEl.textContent = ''; }
+  function closeModal(){ modal.style.display = 'none'; }
+
+  // Boutons
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+
+  sendBtn?.addEventListener('click', async ()=>{
+    const email = (emailEl.value||'').trim();
+    if(!email){ msgEl.textContent = "Entre un e-mail."; return; }
+    msgEl.textContent = "Envoi en cours…";
+    try{
+      await Data.init();
+      const { error } = await Data.signInWithEmail(email);
+      if (error) { msgEl.textContent = "Erreur: " + error.message; return; }
+      msgEl.textContent = "Vérifie ta boîte mail et ouvre le lien.";
+    }catch(e){ msgEl.textContent = "Erreur: " + e; }
+  });
+
+  logoutBtn?.addEventListener('click', async ()=>{
+    try{
+      await Data.signOut?.();
+      await Data.refresh?.();
+      renderAuthState(); // ci-dessous
+    }catch(e){ console.warn(e); }
+  });
+
+  async function renderAuthState(){
+    try{
+      await Data.init?.();
+      const user = await Data.getUser?.();
+      if (user){
+        userSpan.style.display = '';
+        userSpan.textContent = user.email || 'connecté';
+        openBtn.style.display = 'none';
+        logoutBtn.style.display = '';
+      }else{
+        userSpan.style.display = 'none';
+        userSpan.textContent = '';
+        openBtn.style.display = '';
+        logoutBtn.style.display = 'none';
+      }
+    }catch(e){ console.warn("[authUI] renderAuthState:", e); }
+  }
+
+  // 1) au chargement
+  renderAuthState();
+
+  // 2) si retour de magic link (#access_token dans l’URL), rafraîchir et nettoyer l’URL
+  (async function handleMagicLink(){
+    if (location.hash && /access_token=/.test(location.hash)) {
+      try {
+        await Data.init?.();
+        await Data.refresh?.();
+        renderAuthState();
+        history.replaceState({}, document.title, location.pathname + location.search); // enlève le hash
+      } catch(e){ console.warn("[authUI] magic link:", e); }
+    }
+  })();
+})();

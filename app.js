@@ -1461,17 +1461,20 @@ if ("serviceWorker" in navigator) {
   closeBtn?.addEventListener('click', closeModal);
   modal?.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
 
-  sendBtn?.addEventListener('click', async ()=>{
-    const email = (emailEl.value||'').trim();
-    if(!email){ msgEl.textContent = "Entre un e-mail."; return; }
-    msgEl.textContent = "Envoi en cours…";
-    try{
-      await Data.init();
-      const { error } = await Data.signInWithEmail(email);
-      if (error) { msgEl.textContent = "Erreur: " + error.message; return; }
-      msgEl.textContent = "Vérifie ta boîte mail et ouvre le lien.";
-    }catch(e){ msgEl.textContent = "Erreur: " + e; }
-  });
+sendBtn?.addEventListener('click', async ()=>{
+  const email = (emailEl.value||'').trim();
+  if(!email){ msgEl.textContent = "Entre un e-mail."; return; }
+  msgEl.textContent = "Envoi en cours…";
+  try{
+    await Data.init?.();
+    // ⚠️ l’URL doit être exactement ton index.html hébergé sur Pages
+    const redirectTo = "https://clemthekey.github.io/motivathon/index.html";
+    const { error } = await Data.signInWithEmail?.(email, redirectTo);
+    if (error) { msgEl.textContent = "Erreur: " + error.message; return; }
+    msgEl.textContent = "Vérifie ta boîte mail et ouvre le lien.";
+  }catch(e){ msgEl.textContent = "Erreur: " + e; }
+});
+
 
   logoutBtn?.addEventListener('click', async ()=>{
     try{

@@ -1438,82 +1438,97 @@ if ("serviceWorker" in navigator) {
       .catch((err) => console.error("❌ Service Worker erreur :", err));
   });
 }
-// === Auth UI wiring ===
-(function authUI(){
-  const $ = (id) => document.getElementById(id);
-  const authBar   = $('authBar');
-  if (!authBar || !window.Data) return; // si la page ne contient pas l'UI
+// === Auth UI wiring (robuste DOM-ready) ===
+(function authUIInstaller(){
+  function $id(id){ return document.getElementById(id); }
 
-  const emailEl  = $('authEmail');
-  const msgEl    = $('authMsg');
-  const modal    = $('authModal');
-  const openBtn  = $('btnLogin');
-  const closeBtn = $('authClose');
-  const sendBtn  = $('authSend');
-  const logoutBtn= $('btnLogout');
-  const userSpan = $('authUser');
+  function bindAuthUI(){
+    const authBar   = $id('authBar');
+    if (!authBar || !window.Data) return false;
 
-  function openModal(){ modal.style.display = 'flex'; emailEl.focus(); msgEl.textContent = ''; }
-  function closeModal(){ modal.style.display = 'none'; }
+    const emailEl  = $id('authEmail');
+    const msgEl    = $id('authMsg');
+    const modal    = $id('authModal');
+    const openBtn  = $id('btnLogin');
+    const closeBtn = $id('authClose');
+    const sendBtn  = $id('authSend');
+    const logoutBtn= $id('btnLogout');
+    const userSpan = $id('authUser');
 
-  // Boutons
-  openBtn?.addEventListener('click', openModal);
-  closeBtn?.addEventListener('click', closeModal);
-  modal?.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+    function openModal(){ if (modal){ modal.style.display = 'flex'; emailEl?.focus(); msgEl && (msgEl.textContent = ''); } }
+    function closeModal(){ if (modal) modal.style.display = 'none'; }
 
-sendBtn?.addEventListener('click', async ()=>{
-  const email = (emailEl.value||'').trim();
-  if(!email){ msgEl.textContent = "Entre un e-mail."; return; }
-  msgEl.textContent = "Envoi en cours…";
-  try{
-    await Data.init?.();
-    // ⚠️ l’URL doit être exactement ton index.html hébergé sur Pages
-    const redirectTo = "https://clemthekey.github.io/motivathon/index.html";
-    const { error } = await Data.signInWithEmail?.(email, redirectTo);
-    if (error) { msgEl.textContent = "Erreur: " + error.message; return; }
-    msgEl.textContent = "Vérifie ta boîte mail et ouvre le lien.";
-  }catch(e){ msgEl.textContent = "Erreur: " + e; }
-});
+    openBtn?.addEventListener('click', openModal);
+    closeBtn?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
 
-
-  logoutBtn?.addEventListener('click', async ()=>{
-    try{
-      await Data.signOut?.();
-      await Data.refresh?.();
-      renderAuthState(); // ci-dessous
-    }catch(e){ console.warn(e); }
-  });
-
-  async function renderAuthState(){
-    try{
-      await Data.init?.();
-      const user = await Data.getUser?.();
-      if (user){
-        userSpan.style.display = '';
-        userSpan.textContent = user.email || 'connecté';
-        openBtn.style.display = 'none';
-        logoutBtn.style.display = '';
-      }else{
-        userSpan.style.display = 'none';
-        userSpan.textContent = '';
-        openBtn.style.display = '';
-        logoutBtn.style.display = 'none';
-      }
-    }catch(e){ console.warn("[authUI] renderAuthState:", e); }
-  }
-
-  // 1) au chargement
-  renderAuthState();
-
-  // 2) si retour de magic link (#access_token dans l’URL), rafraîchir et nettoyer l’URL
-  (async function handleMagicLink(){
-    if (location.hash && /access_token=/.test(location.hash)) {
-      try {
+    sendBtn?.addEventListener('click', async ()=>{
+      if (!msgEl) return;
+      const email = (emailEl?.value||'').trim();
+      if(!email){ msgEl.textContent = "Entre un e-mail."; return; }
+      msgEl.textContent = "Envoi en cours…";
+      try{
         await Data.init?.();
+        const redirectTo = "https://clemthekey.github.io/motivathon/index.html";
+        const { error } = await Data.signInWithEmail?.(email, redirectTo) || {};
+        if (error) { msgEl.textContent = "Erreur: " + error.message; return; }
+        msgEl.textContent = "Vérifie ta boîte mail et ouvre le lien.";
+      }catch(e){ msgEl.textContent = "Erreur: " + e; }
+    });
+
+    logoutBtn?.addEventListener('click', async ()=>{
+      try{
+        await Data.signOut?.();
         await Data.refresh?.();
         renderAuthState();
-        history.replaceState({}, document.title, location.pathname + location.search); // enlève le hash
-      } catch(e){ console.warn("[authUI] magic link:", e); }
+      }catch(e){ console.warn(e); }
+    });
+
+    async function renderAuthState(){
+      try{
+        await Data.init?.();
+        const user = await Data.getUser?.();
+        if (user){
+          userSpan && (userSpan.style.display = '', userSpan.textContent = user.email || 'connecté');
+          openBtn && (openBtn.style.display = 'none');
+          logoutBtn && (logoutBtn.style.display = '');
+        }else{
+          userSpan && (userSpan.style.display = 'none', userSpan.textContent = '');
+          openBtn && (openBtn.style.display = '');
+          logoutBtn && (logoutBtn.style.display = 'none');
+        }
+      }catch(e){ console.warn("[authUI] renderAuthState:", e); }
     }
-  })();
+
+    // init état
+    renderAuthState();
+
+    // gestion du retour du magic link
+    (async function handleMagicLink(){
+      if (location.hash && /access_token=/.test(location.hash)) {
+        try {
+          await Data.init?.();
+          await Data.refresh?.();
+          renderAuthState();
+          history.replaceState({}, document.title, location.pathname + location.search);
+        } catch(e){ console.warn("[authUI] magic link:", e); }
+      }
+    })();
+
+    return true;
+  }
+
+  function tryInit(){
+    if (bindAuthUI()) return;     // OK bindé
+    // ré-essaie jusqu’à 2 s
+    if (Date.now() - start < 2000) setTimeout(tryInit, 150);
+  }
+
+  const start = Date.now();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryInit, { once: true });
+  } else {
+    tryInit();
+  }
 })();
+

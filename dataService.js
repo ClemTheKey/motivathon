@@ -68,15 +68,16 @@
       try { return await _getUserSafe(); }
       catch (e) { console.warn("[auth] getUser error:", e); return null; }
     },
-    async signInWithEmail(email, redirectTo) {
-      if (!state.sb) throw new Error("Supabase non initialisé");
-      const fallback = location.origin + location.pathname; // renvoie sur l’index courant
-      const { error } = await state.sb.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: redirectTo || fallback, shouldCreateUser: true }
-      });
-      return { error };
-    },
+async signInWithEmail(email, redirectTo) {
+  if (!state.sb) throw new Error("Supabase non initialisé");
+  const exact = "https://clemthekey.github.io/motivathon/index.html"; // ← EXACT
+  const { error } = await state.sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: redirectTo || exact, shouldCreateUser: true }
+  });
+  return { error };
+}
+
     async verifyEmailOtp(email, token) {
       if (!state.sb) throw new Error("Supabase non initialisé");
       const { error, data } = await state.sb.auth.verifyOtp({ email, token, type: "email" });

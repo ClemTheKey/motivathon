@@ -20,13 +20,51 @@
     }
   }
 
-  sendBtn?.addEventListener("click", async () => {
-    const email = (emailEl.value || "").trim();
-    if (!email) { msg.textContent = "Entre un e-mail."; return; }
-    msg.textContent = "Envoi en cours…";
-    const { error } = await Data.signInWithEmail(email, location.origin + location.pathname);
-    msg.textContent = error ? "Erreur: " + error.message : "Lien/code envoyé. Consulte ta boîte mail.";
-  });
+sendBtn?.addEventListener("click", async () => {
+  const email = (emailEl.value || "").trim();
+
+  msg.textContent = "";
+  msg.style.color = "#555";
+
+  if (!email) {
+    msg.textContent = "Entre un e-mail.";
+    msg.style.color = "#c00";
+    return;
+  }
+
+  // désactive temporairement le bouton
+  sendBtn.disabled = true;
+  sendBtn.textContent = "Envoi…";
+  sendBtn.style.opacity = "0.7";
+
+  try {
+    await Data.init();
+
+    // ici on force l’URL exacte pour tester
+    const redirect = "https://clemthekey.github.io/motivathon/index.html";
+    const { error } = await Data.signInWithEmail(email, redirect);
+
+    // LOG en console : statut + message
+    console.log("[auth] otp:", error ? { status: error.status, message: error.message } : "OK");
+
+    if (error) {
+      msg.textContent = "Erreur: " + (error.message || error);
+      msg.style.color = "#c00";
+    } else {
+      msg.textContent = "Lien/code envoyé. Vérifie ta boîte mail.";
+      msg.style.color = "#0a0";
+    }
+  } catch (e) {
+    console.warn("[auth] send error:", e);
+    msg.textContent = "Erreur: " + (e.message || e);
+    msg.style.color = "#c00";
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = "Envoyer le lien";
+    sendBtn.style.opacity = "1";
+  }
+});
+
 
   verifyBtn?.addEventListener("click", async () => {
     const email = (emailEl.value || "").trim();

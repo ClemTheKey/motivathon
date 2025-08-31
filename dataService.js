@@ -165,7 +165,7 @@ async refresh({ migrate = true } = {}){
     renderIfAvailable();
     return state.cacheTasks;
   }
-}
+},
 
     onRealtime(cb){
       if (!state.sb) return () => {}; // no-op en local

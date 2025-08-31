@@ -1,4 +1,4 @@
-/* dataService.js — Online only (Supabase required) */
+/* dataService.js — Online only (Supabase requis) */
 (function (global) {
   const state = { sb: null, channel: null, tasks: [] };
 
@@ -6,11 +6,15 @@
     if (!state.sb) throw new Error("Supabase non initialisé");
   }
 
-  async function _getUser() {
-    assertClient();
-    const { data: { user }, error } = await state.sb.auth.getUser();
-    if (error) throw error;
-    return user || null;
+  function isUuid(v) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v || ""));
+  }
+  function newUuid() {
+    if (global.crypto?.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+      const r = (Math.random() * 16) | 0, v = c === "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
   }
 
   function sanitizeTask(t, user_id) {
@@ -25,26 +29,23 @@
     };
   }
 
-  function isUuid(v) {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v || ""));
-  }
-  function newUuid() {
-    if (global.crypto?.randomUUID) return crypto.randomUUID();
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
-      const r = (Math.random()*16)|0, v = c === "x" ? r : (r&0x3)|0x8; return v.toString(16);
-    });
+  async function _getUser() {
+    assertClient();
+    const { data: { user }, error } = await state.sb.auth.getUser();
+    if (error) throw error;
+    return user || null;
   }
 
   const Data = {
-    // Crée un client unique + parse les magic links
     async init() {
       const env = global.__ENV__ || {};
-      if (!global.supabase || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+      const { SUPABASE_URL, SUPABASE_ANON_KEY } = env;
+      if (!global.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
         throw new Error("Config Supabase manquante");
       }
       if (state.sb) return;
 
-      state.sb = global.supabase.createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+      state.sb = global.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
@@ -54,26 +55,48 @@
       });
     },
 
+    // Auth
     async getUser() { return await _getUser(); },
+    async signInWithEmail(email, redirectTo) {
+      assertClient();
+      const fallback = location.origin + location.pathname; // renvoie sur l’index courant
+      const { error } = await state.sb.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: redirectTo || fallback, shouldCreateUser: true }
+      });
+      return { error };
+    },
+    async verifyEmailOtp(email, token) {
+      assertClient();
+      const { error, data } = await state.sb.auth.verifyOtp({ email, token, type: "email" });
+      return { error, data };
+    },
+    async signOut() { assertClient(); await state.sb.auth.signOut(); },
 
-    // Lecture DB -> mémoire (aucun localStorage)
+    // Lecture DB -> mémoire
     async refresh() {
       const u = await _getUser();
       if (!u) { state.tasks = []; return state.tasks; }
       const { data, error } = await state.sb
-        .from("tasks").select("*")
+        .from("tasks")
+        .select("*")
         .eq("user_id", u.id)
         .order("created_at", { ascending: true });
       if (error) throw error;
       state.tasks = Array.isArray(data) ? data : [];
+      // Si ton UI a une fonction renderTasks, déclenche-la :
+      if (global.Motivathon?.renderTasks) {
+        try { global.Motivathon.tasks = state.tasks.slice(); } catch {}
+        try { global.Motivathon.renderTasks(); } catch {}
+      }
       return state.tasks;
     },
 
-    // Liste (depuis mémoire)
+    // Liste en mémoire
     listTasks() { return state.tasks; },
-    listHistory() { return []; },          // (si tu as une table history, on l’ajoutera)
+    listHistory() { return []; }, // ajoute une table history plus tard si besoin
 
-    // Écriture: DB d'abord, puis refresh
+    // Écriture : DB d’abord, puis refresh
     async upsertTask(task) {
       const u = await _getUser();
       if (!u) throw new Error("Non connecté");
@@ -87,7 +110,8 @@
     setTaskDone(id, done) {
       (async () => {
         const u = await _getUser(); if (!u) throw new Error("Non connecté");
-        const { error } = await state.sb.from("tasks")
+        const { error } = await state.sb
+          .from("tasks")
           .update({ done: !!done, updated_at: new Date().toISOString() })
           .eq("id", id).eq("user_id", u.id);
         if (error) { console.warn("[Data] setTaskDone fail", error); return; }
@@ -95,7 +119,7 @@
       })();
     },
 
-    // Realtime (optionnel, on le laisse prêt)
+    // Realtime (optionnel)
     onRealtime(cb) {
       if (!state.sb) return () => {};
       try { if (state.channel) state.sb.removeChannel(state.channel); } catch {}
@@ -106,24 +130,7 @@
         })
         .subscribe();
       return () => { try { state.sb.removeChannel(state.channel); } catch {} };
-    },
-
-    // Auth
-    async signInWithEmail(email, redirectTo) {
-      assertClient();
-      const fallback = location.origin + location.pathname; // renvoie sur l’index actuel
-      const { error } = await state.sb.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: redirectTo || fallback, shouldCreateUser: true }
-      });
-      return { error };
-    },
-    async verifyEmailOtp(email, token) {
-      assertClient();
-      const { error, data } = await state.sb.auth.verifyOtp({ email, token, type: "email" });
-      return { error, data };
-    },
-    async signOut() { assertClient(); await state.sb.auth.signOut(); }
+    }
   };
 
   global.Data = Data;

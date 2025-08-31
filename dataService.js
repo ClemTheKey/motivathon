@@ -35,6 +35,27 @@
 
   async function _getUser(){ if(!state.sb) return null; const { data:{ user } } = await state.sb.auth.getUser(); return user||null; }
 
+async function migrateLocalToDb(u){
+  // Si pas de client ou pas d'user → rien
+  if (!state.sb || !u) return false;
+
+  // Rien de local ? rien à migrer
+  const local = Array.isArray(state.cacheTasks) ? state.cacheTasks : [];
+  if (!local.length) return false;
+
+  // Prépare un upsert en lot (ajoute user_id + id si manquant)
+  const rows = local.map(t => {
+    const id = t.id || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random()));
+    return { ...t, id, user_id: u.id };
+  });
+
+  const { error } = await state.sb.from("tasks").upsert(rows);
+  if (error) { console.warn("[Data] migrateLocalToDb failed:", error); return false; }
+  return true;
+}
+
+
+  
   const Data = {
   async init(){
   // Empêche les doubles inits
@@ -108,22 +129,43 @@
       LS.set(LS.tasksKey, state.cacheTasks);
       return saved;
     },
+async refresh({ migrate = true } = {}){
+  // Si pas connecté → NE TOUCHE PAS au local (surtout pas d'écrasement)
+  const u = await _getUser();
+  if (!u || !state.sb) { renderIfAvailable(); return state.cacheTasks; }
 
-    async refresh(){
-      const u = await _getUser(); if (!u || !state.sb) { renderIfAvailable(); return state.cacheTasks; }
-      try {
-        const { data, error } = await state.sb.from("tasks").select("*").order("created_at",{ascending:true});
-        if (error) throw error;
-        state.cacheTasks = Array.isArray(data) ? data : [];
-        LS.set(LS.tasksKey, state.cacheTasks);
-        renderIfAvailable();
-        return state.cacheTasks;
-      } catch(e){
-        console.warn("[Data] refresh DB failed → using local cache", e);
-        renderIfAvailable();
-        return state.cacheTasks;
+  try {
+    const { data, error } = await state.sb.from("tasks").select("*").order("created_at", { ascending: true });
+    if (error) throw error;
+
+    // ⚠️ Si DB vide mais local plein, on migre local → DB (une seule fois)
+    if (migrate && Array.isArray(data) && data.length === 0 && state.cacheTasks.length > 0) {
+      const ok = await migrateLocalToDb(u);
+      if (ok) {
+        // Puis on recharge depuis la DB pour être 100% en phase
+        const { data: data2, error: e2 } = await state.sb.from("tasks").select("*").order("created_at", { ascending: true });
+        if (!e2 && Array.isArray(data2)) {
+          state.cacheTasks = data2;
+          LS.set(LS.tasksKey, state.cacheTasks);
+          renderIfAvailable();
+          return state.cacheTasks;
+        }
       }
-    },
+    }
+
+    // Cas normal : on a des données (ou vide assumé)
+    if (Array.isArray(data)) {
+      state.cacheTasks = data;                 // ← on aligne le cache avec la DB
+      LS.set(LS.tasksKey, state.cacheTasks);   // ← et on met à jour le local
+    }
+    renderIfAvailable();
+    return state.cacheTasks;
+  } catch(e){
+    console.warn("[Data] refresh failed → keep local", e);
+    renderIfAvailable();
+    return state.cacheTasks;
+  }
+}
 
     onRealtime(cb){
       if (!state.sb) return () => {}; // no-op en local

@@ -1,0 +1,21 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Diag iOS</title>
+<body>
+<pre id="out">Init…</pre>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="dataService.js?v=fix3"></script>
+<script>
+(async()=>{
+  const log = (...a)=>document.getElementById('out').textContent += "\n"+a.join(" ");
+  log("Scripts chargés:", document.scripts.length);
+  if (window.Data){
+    log("Data keys:", Object.keys(Data));
+    await Data.init();
+    log("User:", JSON.stringify(await Data.getUser()));
+    log("Tasks:", JSON.stringify(Data.listTasks()));
+  } else {
+    log("⚠️ Data n’est pas défini");
+  }
+})();
+</script>

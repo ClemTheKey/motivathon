@@ -35,22 +35,40 @@
 
   async function _getUser(){ if(!state.sb) return null; const { data:{ user } } = await state.sb.auth.getUser(); return user||null; }
 
-async function migrateLocalToDb(u){
+async function migrateLocalToDb(u) {
   if (!state.sb || !u) return false;
+
   const local = Array.isArray(state.cacheTasks) ? state.cacheTasks : [];
   if (!local.length) return false;
 
-  // Assure des ids, puis whitelist des champs
+  // Map ancienId -> nouveauUUID (pour ids non UUID)
+  const idMap = {};
+
   const rows = local.map(t => {
-    const id = t.id || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random()));
+    let id = t.id;
+    if (!isUuid(id)) {
+      id = newUuid();
+      idMap[t.id] = id; // mémorise la correspondance
+    }
     return sanitizeTaskForDb({ ...t, id }, u.id);
   });
 
-  // Upsert sans .select() (évite "columns=…" automatiques)
-  const { error } = await state.sb.from("tasks").upsert(rows);
-  if (error) { console.warn("[Data] migrateLocalToDb failed:", error); return false; }
+  // Upsert sans retour de représentation pour éviter ?columns=...
+  const { error } = await state.sb.from("tasks").upsert(rows, { returning: "minimal" });
+  if (error) {
+    console.warn("[Data] migrateLocalToDb failed:", error);
+    return false;
+  }
+
+  // Si on a changé des ids, aligne le cache local et persiste
+  if (Object.keys(idMap).length) {
+    state.cacheTasks = state.cacheTasks.map(t => idMap[t.id] ? { ...t, id: idMap[t.id] } : t);
+    LS.set(LS.tasksKey, state.cacheTasks);
+  }
+
   return true;
 }
+
 
 
 // Conserver UNIQUEMENT les colonnes de la table "tasks"
@@ -69,7 +87,18 @@ function sanitizeTaskForDb(t, user_id) {
   };
 }
 
-  
+ function isUuid(v) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v || ""));
+}
+function newUuid() {
+  if (window.crypto?.randomUUID) return crypto.randomUUID();
+  // fallback UUID v4
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0, v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+ 
   const Data = {
   async init(){
   // Empêche les doubles inits
@@ -124,27 +153,36 @@ function sanitizeTaskForDb(t, user_id) {
       })();
     },
 
-async upsertTask(task){
-  if (!task.id) task.id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+"-"+Math.random());
-  // cache local immédiat (UX)
+async upsertTask(task) {
+  // Toujours forcer un UUID
+  if (!task.id || !isUuid(task.id)) task.id = newUuid();
+
+  // Maj cache local immédiate
   const idx = state.cacheTasks.findIndex(t => t && t.id === task.id);
-  if (idx >= 0) state.cacheTasks[idx] = { ...state.cacheTasks[idx], ...task };
-  else state.cacheTasks.push(task);
+  if (idx >= 0) {
+    state.cacheTasks[idx] = { ...state.cacheTasks[idx], ...task };
+  } else {
+    state.cacheTasks.push(task);
+  }
   LS.set(LS.tasksKey, state.cacheTasks);
 
-  const u = await _getUser(); if (!u || !state.sb) return task;
+  // Si pas connecté → reste local
+  const u = await _getUser();
+  if (!u || !state.sb) return task;
 
+  // On envoie uniquement les colonnes valides (grâce au sanitizer)
   const payload = sanitizeTaskForDb(task, u.id);
-  const { data, error } = await state.sb.from("tasks").upsert(payload).select().maybeSingle();
-  if (error) { console.warn("[Data] upsertTask DB failed → keep local", error); return task; }
 
-  const saved = data || payload;
-  const i2 = state.cacheTasks.findIndex(t => t && t.id === saved.id);
-  if (i2 >= 0) state.cacheTasks[i2] = { ...state.cacheTasks[i2], ...saved };
-  else state.cacheTasks.push(saved);
-  LS.set(LS.tasksKey, state.cacheTasks);
-  return saved;
+  // Upsert côté DB (on ne demande pas de retour pour éviter ?columns=…)
+  const { error } = await state.sb.from("tasks").upsert(payload, { returning: "minimal" });
+  if (error) {
+    console.warn("[Data] upsertTask DB failed → keep local", error);
+    return task;
+  }
+
+  return task;
 },
+
 
 async refresh({ migrate = true } = {}) {
   const u = await _getUser();

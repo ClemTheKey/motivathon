@@ -1,28 +1,22 @@
-// db_init.js — bootstrap 100% tolérant
+// db_init.js — bootstrap safe
 (async () => {
   try {
-    if (!window.Data) {
-      console.info("[db_init] Data non présent (ok).");
-      return;
-    }
+    if (!window.Data) return;
 
-    if (typeof Data.init === "function") {
-      await Data.init();
-    }
+    await Data.init?.();
 
-    if (typeof Data.refresh === "function") {
-      await Data.refresh();
-    }
-
-    if (typeof Data.onRealtime === "function") {
-      // On s'abonne seulement si la méthode existe
-      Data.onRealtime(async () => {
-        if (typeof Data.refresh === "function") {
-          await Data.refresh();
-        }
-      });
+    const user = await Data.getUser?.();
+    if (user) {
+      // On autorise la migration local → DB au premier refresh
+      await Data.refresh?.({ migrate: true });
     } else {
-      console.info("[db_init] onRealtime absent (normal si local).");
+      // Non connecté : on n'appelle pas refresh, on laisse le local tel quel
+      // et l'app continue à fonctionner hors-ligne.
+    }
+
+    // Realtime si dispo
+    if (typeof Data.onRealtime === "function") {
+      Data.onRealtime(async () => { await Data.refresh?.({ migrate: false }); });
     }
   } catch (e) {
     console.warn("[db_init] bootstrap failed:", e);

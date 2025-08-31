@@ -258,5 +258,27 @@
 <script src="dataService.js?v=fix1"></script>
 <script src="db_init.js?v=fix1"></script>
 <script src="app.js?v=fix1"></script>
+
+  <!-- Gate (bloque l'app tant qu'on n'est pas connecté) -->
+<div id="gate" style="position:fixed;inset:0;background:#fff;display:none;z-index:10000;align-items:center;justify-content:center">
+  <div style="width:min(92vw,420px);padding:20px;border:1px solid #eee;border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.12);background:#fff">
+    <h3 style="margin:0 0 8px">Connexion requise</h3>
+    <p>Entre ton e-mail pour recevoir un lien (ou un code à 6 chiffres).</p>
+    <input id="authEmail" type="email" placeholder="email@exemple.com"
+           style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;margin:8px 0 10px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px">
+      <button id="authSend" class="btn">Envoyer le lien</button>
+      <input id="authCode" type="text" inputmode="numeric" maxlength="6" placeholder="------"
+             style="width:120px;padding:10px;border:1px solid #ddd;border-radius:8px;text-align:center;letter-spacing:4px">
+      <button id="authVerify" class="btn">Valider le code</button>
+    </div>
+    <div id="authMsg" style="color:#555;font:13px system-ui"></div>
+  </div>
+</div>
+
+<style>
+.btn{padding:8px 12px;border:1px solid #0077cc;border-radius:10px;background:#0077cc;color:#fff;cursor:pointer}
+</style>
+
 </body>
 </html>
